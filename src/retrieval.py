@@ -1,0 +1,247 @@
+# LLM (LangChain-kompatibel)
+from langchain_community.llms import LlamaCpp
+
+# RAG Chain
+from langchain_classic.chains.combine_documents import create_stuff_documents_chain
+
+# Embeddings
+from langchain_huggingface import HuggingFaceEmbeddings
+
+# Vectorstore
+from langchain_chroma import Chroma
+
+# Optional Web UI
+import streamlit as st
+
+from langchain_classic.prompts import PromptTemplate
+from sentence_transformers import CrossEncoder
+from langchain_community.retrievers import BM25Retriever
+
+# -------------------
+# Prompt Template
+# -------------------
+prompt_template = """[INST]
+Du bist ein präziser Dokumentenassistent.
+
+Beantworte die Frage ausschließlich anhand des bereitgestellten Kontexts.
+
+REGELN:
+- Antworte nur mit Informationen aus dem Kontext.
+- Erfinde keine Informationen.
+- Wenn die Antwort nicht eindeutig im Kontext steht, antworte exakt mit:
+  "Im Dokument wurde keine Information dazu gefunden."
+- Antworte kurz und präzise.
+- Antworte ausschließlich auf Deutsch.
+
+KONTEXT:
+{context}
+
+FRAGE:
+{question}
+[/INST]
+"""
+
+
+PROMPT = PromptTemplate(
+    template=prompt_template,
+    input_variables=["context", "question"]
+)
+
+# -------------------
+# Config
+# -------------------
+CHROMA_DIR = "chroma_db"
+EMBEDDING_MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
+LLM_MODEL_PATH = "models/mistral-7b-instruct-v0.2.Q4_K_M.gguf"
+
+TOP_K = 12
+
+# -------------------
+# leichtgewichtiges, multilingual / deutschfähiges Modell für Re-Ranking Crossencoder
+# -------------------
+cross_encoder = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
+
+def rerank_candidates(query, docs, cross_encoder, top_k=8):
+    """
+    Re-Rankt eine Liste von Dokumenten-Chunks nach Relevanz zur Frage.
+    """
+    pairs = [(query, doc.page_content) for doc in docs]
+    scores = cross_encoder.predict(pairs)
+
+    scored_docs = list(zip(scores, docs))
+
+    scored_docs.sort(key=lambda x: x[0], reverse=True)
+
+    return scored_docs[:top_k]
+
+
+
+# -------------------
+# Embeddings
+# -------------------
+embeddings = HuggingFaceEmbeddings(
+    model_name=EMBEDDING_MODEL_NAME
+)
+
+
+# -------------------
+# Vector DB
+# -------------------
+vectordb = Chroma(
+    persist_directory=CHROMA_DIR,
+    embedding_function=embeddings
+)
+
+retriever = vectordb.as_retriever(
+    search_type="similarity_score_threshold",
+    search_kwargs={"k": TOP_K, "score_threshold": 0.1}
+)
+
+
+# -------------------
+# LLM (lokal, CPU)
+# -------------------
+llm = LlamaCpp(
+    model_path=LLM_MODEL_PATH,
+    temperature=0.1,
+    max_tokens=512,
+    n_ctx=4096,
+    verbose=False
+)
+
+
+# -------------------
+# QA Chain
+# -------------------
+qa_chain = create_stuff_documents_chain(
+    llm=llm,
+    prompt=PROMPT
+)
+
+
+# -------------------
+# BM25 Retriever
+# -------------------
+# Alle Dokumente laden aus Chroma
+all_docs = vectordb.get()
+
+documents = []
+for i in range(len(all_docs["documents"])):
+    from langchain_core.documents import Document
+    
+    documents.append(
+        Document(
+            page_content=all_docs["documents"][i],
+            metadata=all_docs["metadatas"][i]
+        )
+    )
+
+# BM25 Retriever
+bm25_retriever = BM25Retriever.from_documents(documents)
+
+bm25_retriever.k = TOP_K
+
+def hybrid_search(query, k=TOP_K):
+
+    emb = retriever.invoke(query)
+    bm25 = bm25_retriever.invoke(query)
+
+    # Gewichtung
+    emb_weight = 0.7
+    bm25_weight = 0.3
+
+    scored = {}
+
+    for rank, doc in enumerate(emb):
+        scored[doc.page_content] = scored.get(doc.page_content, 0) + emb_weight * (1 / (rank + 1))
+
+    for rank, doc in enumerate(bm25):
+        scored[doc.page_content] = scored.get(doc.page_content, 0) + bm25_weight * (1 / (rank + 1))
+
+    # sortieren
+    sorted_docs = sorted(scored.items(), key=lambda x: x[1], reverse=True)
+
+    # zurück zu Documents
+    content_to_doc = {doc.page_content: doc for doc in emb + bm25}
+
+    return [content_to_doc[content] for content, score in sorted_docs[:k]]
+
+
+
+# -------------------
+# CLI Interface
+# -------------------
+def cli():
+    print("Lokales PDF-RAG System bereit. 'exit' zum Beenden.\n")
+
+    while True:
+        query = input("Frage: ")
+
+        if query.lower() in ["exit", "quit"]:
+            print("Beendet.")
+            break
+
+        # Candidate Retrieval
+        candidates = hybrid_search(query)
+        
+        # Re-Ranking
+        reranked = rerank_candidates(query, candidates, cross_encoder, top_k=8)
+        for score, doc in reranked:
+            print(f"CrossEncoder Score: {score:.3f}")
+            print(f"{doc.metadata.get('source')} Seite {doc.metadata.get('page')}")
+            print(doc.page_content[:500])
+            print("\n----------------\n")
+
+
+        top_docs = [doc for score, doc in reranked]
+        # LLM Antwort
+        result = qa_chain.invoke({
+            "context": top_docs,
+            "question": query
+        })
+
+
+        print("\nAntwort:\n")
+        print(result)
+
+        # Quellen anzeigen
+        print("\nQuellen:\n")
+        docs_and_scores = vectordb.similarity_search_with_score(query, k=12)
+        for i, (doc, distance) in enumerate(docs_and_scores, 1):
+
+            similarity = 1 - distance
+
+            print(f"Chunk #{i}")
+            print(f"Similarity: {similarity:.3f}")
+            print(f"Distance:   {distance:.3f}")
+            print(f"Quelle:     {doc.metadata.get('source')}")
+            print(f"Seite:      {doc.metadata.get('page')}")
+
+            print("\nText:")
+            print(doc.page_content[:500])
+
+        print("\n-------------------\n")
+
+
+
+# -------------------
+# Streamlit Interface
+# -------------------
+def web():
+    st.title("PDF QA lokal")
+
+    query = st.text_input("Frage")
+
+    if query:
+        result = qa_chain.invoke({"query": query})
+        st.write(result["result"])
+
+
+# -------------------
+# Main
+# -------------------
+if __name__ == "__main__":
+    
+    cli()
+
+
