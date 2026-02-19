@@ -1,0 +1,13 @@
+services:
+  indexer:
+    build: .
+    volumes:
+      - ./data/pdfs:/app/data/pdfs       
+      - ./chroma_db:/app/chroma_db    
+      - ./src:/app/src    
+    environment:
+      - PYTHONUNBUFFERED=1                # Logs sofort sichtbar
+
+volumes:
+  chroma_data:
+    driver: local

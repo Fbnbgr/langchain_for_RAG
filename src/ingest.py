@@ -15,6 +15,7 @@ CHUNK_OVERLAP = 100
 
 
 def file_hash(path: str) -> str:
+    # Berechnet den SHA256-Hash einer Ingest Datei, um Änderungen zu erkennen
     sha256 = hashlib.sha256()
     with open(path, "rb") as f:
         for block in iter(lambda: f.read(4096), b""):
@@ -23,9 +24,12 @@ def file_hash(path: str) -> str:
 
 
 def load_existing_hashes(vectordb: Chroma) -> set[str]:
+    # Set, um doppelte Werte zu vermeiden, da mehrere Dokumente den gleichen Hash haben könnten (z.B. gleiche PDF mit vielen Chunks)
     existing = set()
     try:
+        # Nur die Metadaten abrufen, um die Hashes zu extrahieren und nicht die gesamten Vektoren
         data = vectordb.get(include=["metadatas"])
+        # Die Metadaten enthalten die "file_hash"-Felder, die zum Vergleich genutzt werden
         for meta in data.get("metadatas", []):
             if meta and "file_hash" in meta:
                 existing.add(meta["file_hash"])
