@@ -4,7 +4,8 @@ WORKDIR /app
 
 # Systemabhängigkeiten für PyPDF
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc \
+    build-essential \
+    cmake \
     && rm -rf /var/lib/apt/lists/*
 
 # Abhängigkeiten zuerst (Layer-Caching)
@@ -17,5 +18,3 @@ RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTr
 
 # Anwendungscode
 COPY . .
-
-CMD ["python", "src/ingest.py"]

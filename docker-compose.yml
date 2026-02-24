@@ -2,12 +2,21 @@ services:
   indexer:
     build: .
     volumes:
-      - ./data/pdfs:/app/data/pdfs       
-      - ./chroma_db:/app/chroma_db    
-      - ./src:/app/src    
+      - ./data/pdfs:/app/data/pdfs
+      - ./chroma_db:/app/chroma_db
+      - ./src:/app/src
     environment:
-      - PYTHONUNBUFFERED=1                # Logs sofort sichtbar
+      - PYTHONUNBUFFERED=1
+    command: ["python", "src/indexer.py"]
 
-volumes:
-  chroma_data:
-    driver: local
+  retrieval:
+    build: .
+    volumes:
+      - ./chroma_db:/app/chroma_db
+      - ./src:/app/src
+      - ./models:/app/models
+    environment:
+      - PYTHONUNBUFFERED=1
+    stdin_open: true
+    tty: true
+    command: ["python", "src/retrieval.py"]
