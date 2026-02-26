@@ -45,11 +45,11 @@ PROMPT = PromptTemplate(
 # Config
 CHROMA_DIR = "chroma_db"
 EMBEDDING_MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
-LLM_MODEL_PATH = "models/mistral-7b-instruct-v0.2.Q4_K_M.gguf"
-TOP_K = 20
+LLM_MODEL_PATH = "models/qwen2.5-3b-instruct-q4_k_m.gguf"
+TOP_K = 12
 
 # leichtgewichtiges, multilingual / deutschfähiges Modell für Re-Ranking Crossencoder
-cross_encoder = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
+cross_encoder = CrossEncoder("cross-encoder/ms-marco-TinyBERT-L-2-v2")
 
 def rerank_candidates(query, docs, cross_encoder, top_k=8):
     """
@@ -85,7 +85,7 @@ llm = LlamaCpp(
     model_path=LLM_MODEL_PATH,
     temperature=0.1,
     max_tokens=512,
-    n_ctx=4096,
+    n_ctx=2048,
     verbose=False
 )
 
