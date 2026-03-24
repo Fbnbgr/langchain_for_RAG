@@ -8,9 +8,9 @@ from langchain_chroma import Chroma
 
 PDF_DIR = "data/pdfs"
 CHROMA_DIR = "chroma_db"
-EMBEDDING_MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
+EMBEDDING_MODEL_NAME = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 
-CHUNK_SIZE = 1000
+CHUNK_SIZE = 1200
 CHUNK_OVERLAP = 200
 
 
@@ -47,7 +47,8 @@ def main():
     # langchain wrapper um chromadb, um die Dokumente zu speichern und zu verwalten
     vectordb = Chroma(
         persist_directory=CHROMA_DIR,
-        embedding_function=embeddings
+        embedding_function=embeddings,
+        collection_metadata={"hnsw:space": "cosine"}
     )
 
     existing_hashes = load_existing_hashes(vectordb)
