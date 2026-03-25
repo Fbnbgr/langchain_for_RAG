@@ -5,14 +5,12 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
 
-
 PDF_DIR = "data/pdfs"
 CHROMA_DIR = "chroma_db"
 EMBEDDING_MODEL_NAME = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 
-CHUNK_SIZE = 1200
-CHUNK_OVERLAP = 200
-
+CHUNK_SIZE = 250
+CHUNK_OVERLAP = 0
 
 def file_hash(path: str) -> str:
     # Berechnet den SHA256-Hash einer Ingest Datei, um Änderungen zu erkennen
@@ -21,7 +19,6 @@ def file_hash(path: str) -> str:
         for block in iter(lambda: f.read(4096), b""):
             sha256.update(block)
     return sha256.hexdigest()
-
 
 def load_existing_hashes(vectordb: Chroma) -> set[str]:
     # Set, um doppelte Werte zu vermeiden, da mehrere Dokumente den gleichen Hash haben könnten (z.B. gleiche PDF mit vielen Chunks)
@@ -36,7 +33,6 @@ def load_existing_hashes(vectordb: Chroma) -> set[str]:
     except Exception:
         pass
     return existing
-
 
 def main():
     if not os.path.exists(PDF_DIR):
@@ -57,7 +53,7 @@ def main():
     total_chunks = vectordb._collection.count()
     print(f"Chunks gesamt: {total_chunks}")
 
-    splitter = RecursiveCharacterTextSplitter(
+    splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
         chunk_size=CHUNK_SIZE,
         chunk_overlap=CHUNK_OVERLAP,
     )

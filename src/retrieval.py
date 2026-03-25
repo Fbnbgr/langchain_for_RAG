@@ -15,6 +15,7 @@ from sentence_transformers import CrossEncoder
 from langchain_community.retrievers import BM25Retriever
 from langchain_core.documents import Document
 
+
 # Prompt Template
 prompt_template = """[INST]
 Du bist ein präziser Dokumentenassistent.
