@@ -78,6 +78,7 @@ STUDENT ANSWER: {outputs['answer']}"""
     return "true" in grade.lower()
 
 def evaluation():
+    print("Starte Evaluation")
     evaluation_results = client.evaluate(
             target,
             data=dataset_name,
