@@ -23,9 +23,16 @@ services:
   
   evaluation:
     build: .
-    command: python src/evaluation.py
+    command: ["python", "src/evaluation.py"]     
+    working_dir: /app
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
     volumes:
       - ./chroma_db:/app/chroma_db      
-      - ./models:/app/models           
+      - ./models:/app/models    
+      - ./src:/app/src  
+      - ./data/evaluation:/app/data/evaluation     
     env_file:
-      - .env     
+      - .env
+    

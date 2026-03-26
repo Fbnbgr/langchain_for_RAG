@@ -1,8 +1,9 @@
 from typing_extensions import Annotated, TypedDict
 from langchain_community.llms import LlamaCpp
 from langsmith import Client
-from data.examples_jahrbuch import examples
-from rag import hybrid_search, rerank_candidates, qa_chain, cross_encoder, TOP_K
+from langsmith.evaluation import evaluate
+from data.evaluation.examples_jahrbuch import examples
+from retrieval import hybrid_search, rerank_candidates, qa_chain, cross_encoder, TOP_K
 import os
 from dotenv import load_dotenv
 load_dotenv()
@@ -12,14 +13,20 @@ LLM_MODEL_PATH = "models/mistral-7b-instruct-v0.2.Q4_K_M.gguf"
 client = Client()
 
 dataset_name = "Jahrbuecher_MVL"
-if not client.has_dataset(dataset_name=dataset_name):
-    dataset = client.create_dataset(dataset_name=dataset_name)
-    client.create_examples(
-        dataset_id=dataset.id,
-        examples=examples
-    )
-else:
-    dataset = client.read_dataset(dataset_name=dataset_name)
+try:
+    old_dataset = client.read_dataset(dataset_name=dataset_name)
+    client.delete_dataset(dataset_id=old_dataset.id)
+    print("Altes Dataset gelöscht")
+except Exception:
+    print("Kein bestehendes Dataset gefunden")
+
+dataset = client.create_dataset(dataset_name=dataset_name)
+client.create_examples(
+    dataset_id=dataset.id,
+    inputs=[e["inputs"] for e in examples],
+    outputs=[e["outputs"] for e in examples],
+)
+print(f"Examples hochgeladen: {len(examples)}")
 
 def target(inputs: dict) -> dict:
     query = inputs["question"]
@@ -79,7 +86,7 @@ STUDENT ANSWER: {outputs['answer']}"""
 
 def evaluation():
     print("Starte Evaluation")
-    evaluation_results = client.evaluate(
+    evaluation_results = evaluate(
             target,
             data=dataset_name,
             evaluators=[correctness],
