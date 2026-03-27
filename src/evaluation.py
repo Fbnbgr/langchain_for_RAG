@@ -5,8 +5,9 @@ from langsmith.evaluation import evaluate
 from data.evaluation.examples_jahrbuch import examples
 from retrieval import hybrid_search, rerank_candidates, qa_chain, cross_encoder, TOP_K
 import os
+from langsmith import traceable
 from dotenv import load_dotenv
-load_dotenv()
+load_dotenv(dotenv_path=".env", override=True)
 
 LLM_MODEL_PATH = "models/mistral-7b-instruct-v0.2.Q4_K_M.gguf"
 
@@ -28,6 +29,7 @@ client.create_examples(
 )
 print(f"Examples hochgeladen: {len(examples)}")
 
+@traceable
 def target(inputs: dict) -> dict:
     query = inputs["question"]
     
@@ -84,6 +86,7 @@ STUDENT ANSWER: {outputs['answer']}"""
     
     return "true" in grade.lower()
 
+@traceable
 def evaluation():
     print("Starte Evaluation")
     evaluation_results = evaluate(
