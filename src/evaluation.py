@@ -1,5 +1,6 @@
 from typing_extensions import Annotated, TypedDict
 from langchain_community.llms import LlamaCpp
+from pathlib import Path
 from langsmith import Client
 from langsmith.evaluation import evaluate
 from data.evaluation.examples_jahrbuch import examples
@@ -7,7 +8,8 @@ from retrieval import hybrid_search, rerank_candidates, qa_chain, cross_encoder,
 import os
 from langsmith import traceable
 from dotenv import load_dotenv
-load_dotenv(dotenv_path=".env", override=True)
+env_path = dotenv_path=Path(__file__).parent.parent / ".env"
+load_dotenv(dotenv_path = env_path)
 
 LLM_MODEL_PATH = "models/mistral-7b-instruct-v0.2.Q4_K_M.gguf"
 
@@ -68,9 +70,15 @@ Explain your reasoning in a step-by-step manner to ensure your reasoning and con
 grader_llm = LlamaCpp(
     model_path=LLM_MODEL_PATH,
     temperature=0.1,
-    max_tokens=512,
-    n_ctx=4096,
-    verbose=False
+    # max anzahl an auszugebenden Tokens (soll nur 1 Token ausgeben)
+    max_tokens=64,
+    # Kontextgröße
+    n_ctx=2048,
+    # parallele Verarbeitung von x Tokens
+    n_batch=512,
+    n_threads=os.cpu_count(),
+    # logs
+    verbose=True
 )
 
 def correctness(inputs: dict, outputs: dict, reference_outputs: dict) -> bool:
@@ -100,4 +108,6 @@ def evaluation():
 
 if __name__ == "__main__":
     results = evaluation()
-    print(results)
+    # print(results)
+    print("Evaluation finished")
+    

@@ -132,15 +132,15 @@ def hybrid_search(query, k=TOP_K):
     # reciprocal rank fusion (RRF) für die Kombination der Ergebnisse von Embeddings und BM25
     for rank, doc in enumerate(emb):
         scored[doc.page_content] = scored.get(doc.page_content, 0) + emb_weight * (1 / (rank + 1))
-        print(f"EMB {rank}: {doc.page_content}")
+        # print(f"EMB {rank}: {doc.page_content}")
 
     for rank, doc in enumerate(bm25):
         scored[doc.page_content] = scored.get(doc.page_content, 0) + bm25_weight * (1 / (rank + 1))
-        print(f"BM25 {rank}: {doc.page_content}")
+        # print(f"BM25 {rank}: {doc.page_content}")
 
     # sortieren
     sorted_docs = sorted(scored.items(), key=lambda x: x[1], reverse=True)
-    print(f"sorted_docs: {sorted_docs}")
+    # print(f"sorted_docs: {sorted_docs}")
 
     # zurück zu Documents
     content_to_doc = {doc.page_content: doc for doc in bm25 + emb}
