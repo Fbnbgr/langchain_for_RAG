@@ -2,10 +2,13 @@
 # Langchain RAG Project
 ## Schnellstart
 git clone https://github.com/Fbnbgr/langchain_setup
+
 docker compose build
+
 docker compose up -d
 
 docker compose run --rm indexer
+
 docker compose run --rm retrieval
 
 ## Techstack
