@@ -61,7 +61,11 @@ def rerank_candidates(query, docs, cross_encoder, top_k=8):
 
     scored_docs.sort(key=lambda x: x[0], reverse=True)
 
-    return scored_docs[:top_k]
+    # Filtern mit Schwellenwert
+    filtered = [(score, doc) for score, doc in scored_docs if score > 0.3]
+
+    # Fallback: Wenn kein Dokument über dem Schwellenwert liegt, nimm das bestbewertete Dokument
+    return filtered[:top_k] if filtered else scored_docs[:1]
 
 # Embeddings
 embeddings = HuggingFaceEmbeddings(

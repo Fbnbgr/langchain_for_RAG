@@ -3,11 +3,13 @@ from langchain_community.llms import LlamaCpp
 from pathlib import Path
 from langsmith import Client
 from langsmith.evaluation import evaluate
-from data.evaluation.examples_jahrbuch import examples
 from retrieval import hybrid_search, rerank_candidates, qa_chain, cross_encoder, TOP_K
 import os
 from langsmith import traceable
 from dotenv import load_dotenv
+
+# import for test cases
+from data.evaluation.examples import examples
 env_path = dotenv_path=Path(__file__).parent.parent / ".env"
 load_dotenv(dotenv_path = env_path)
 
@@ -15,7 +17,8 @@ LLM_MODEL_PATH = "models/mistral-7b-instruct-v0.2.Q4_K_M.gguf"
 
 client = Client()
 
-dataset_name = "Jahrbuecher_MVL"
+dataset_name = "examples"
+
 try:
     old_dataset = client.read_dataset(dataset_name=dataset_name)
     client.delete_dataset(dataset_id=old_dataset.id)

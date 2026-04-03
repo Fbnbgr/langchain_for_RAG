@@ -7,10 +7,10 @@ from langchain_chroma import Chroma
 
 PDF_DIR = "data/pdfs"
 CHROMA_DIR = "chroma_db"
-EMBEDDING_MODEL_NAME = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+EMBEDDING_MODEL_NAME = "deepset/gbert-base"
 
-CHUNK_SIZE = 250
-CHUNK_OVERLAP = 0
+CHUNK_SIZE = 256
+CHUNK_OVERLAP = 25
 
 def file_hash(path: str) -> str:
     # Berechnet den SHA256-Hash einer Ingest Datei, um Änderungen zu erkennen
@@ -87,7 +87,9 @@ def main():
         return
 
     vectordb.add_documents(new_chunks)
-    print(f"Fertig. {len(new_chunks)} neue Chunks hinzugefügt.")
+    vectordb.persist()
+    after = vectordb._collection.count()
+    print(f"Fertig. {len(new_chunks)} neue Chunks hinzugefügt. DB: {total_chunks} → {after}")
 
 
 if __name__ == "__main__":
