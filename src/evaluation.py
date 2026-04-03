@@ -7,6 +7,7 @@ from retrieval import hybrid_search, rerank_candidates, qa_chain, cross_encoder,
 import os
 from langsmith import traceable
 from dotenv import load_dotenv
+import time
 
 # import for test cases
 from data.evaluation.examples import examples
@@ -20,19 +21,16 @@ client = Client()
 dataset_name = "examples"
 
 try:
-    old_dataset = client.read_dataset(dataset_name=dataset_name)
-    client.delete_dataset(dataset_id=old_dataset.id)
-    print("Altes Dataset gelöscht")
+    dataset = client.read_dataset(dataset_name=dataset_name)
+    print(f"Dataset bereits vorhanden: {dataset.id}")
 except Exception:
-    print("Kein bestehendes Dataset gefunden")
-
-dataset = client.create_dataset(dataset_name=dataset_name)
-client.create_examples(
-    dataset_id=dataset.id,
-    inputs=[e["inputs"] for e in examples],
-    outputs=[e["outputs"] for e in examples],
-)
-print(f"Examples hochgeladen: {len(examples)}")
+    dataset = client.create_dataset(dataset_name=dataset_name)
+    client.create_examples(
+        dataset_id=dataset.id,
+        inputs=[e["inputs"] for e in examples],
+        outputs=[e["outputs"] for e in examples],
+    )
+    print(f"Dataset erstellt und {len(examples)} Examples hochgeladen")
 
 @traceable
 def target(inputs: dict) -> dict:

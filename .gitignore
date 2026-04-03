@@ -1,5 +1,5 @@
+chroma_db/
 data/pdfs
 models/
 .env
 data/evaluation/examples.py
-chroma_db/

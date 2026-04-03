@@ -4,6 +4,8 @@ from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
+import logging
+import time
 
 PDF_DIR = "data/pdfs"
 CHROMA_DIR = "chroma_db"
@@ -11,6 +13,13 @@ EMBEDDING_MODEL_NAME = "deepset/gbert-base"
 
 CHUNK_SIZE = 256
 CHUNK_OVERLAP = 25
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S"
+)
+logger = logging.getLogger(__name__)
 
 def file_hash(path: str) -> str:
     # Berechnet den SHA256-Hash einer Ingest Datei, um Änderungen zu erkennen
@@ -35,6 +44,7 @@ def load_existing_hashes(vectordb: Chroma) -> set[str]:
     return existing
 
 def main():
+    start = time.time()
     if not os.path.exists(PDF_DIR):
         raise RuntimeError(f"PDF-Ordner existiert nicht: {PDF_DIR}")
 
@@ -48,10 +58,10 @@ def main():
     )
 
     existing_hashes = load_existing_hashes(vectordb)
-    print(f"Gefundene bekannte PDFs: {len(existing_hashes)}")
+    logger.info(f"Gefundene bekannte PDFs: {len(existing_hashes)}")
 
     total_chunks = vectordb._collection.count()
-    print(f"Chunks gesamt: {total_chunks}")
+    logger.info(f"Chunks gesamt: {total_chunks}")
 
     splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
         chunk_size=CHUNK_SIZE,
@@ -68,10 +78,10 @@ def main():
         pdf_hash = file_hash(path)
 
         if pdf_hash in existing_hashes:
-            print(f"Überspringe (bereits indexiert): {file}")
+            logger.info(f"Überspringe (bereits indexiert): {file}")
             continue
 
-        print(f"Verarbeite neue PDF: {file}")
+        logger.info(f"Verarbeite neue PDF: {file}")
         loader = PyPDFLoader(path)
         docs = loader.load()
 
@@ -81,15 +91,16 @@ def main():
 
         chunks = splitter.split_documents(docs)
         new_chunks.extend(chunks)
+        duration = time.time() - start
+        logger.info(f"PDF: {file} | Seiten: {len(docs)} | Chunks: {len(chunks)} | Zeit: {duration:.1f}s")
 
     if not new_chunks:
-        print("Keine neuen PDFs gefunden. Nichts zu tun.")
+        logger.info("Keine neuen PDFs gefunden. Nichts zu tun.")
         return
 
     vectordb.add_documents(new_chunks)
-    vectordb.persist()
     after = vectordb._collection.count()
-    print(f"Fertig. {len(new_chunks)} neue Chunks hinzugefügt. DB: {total_chunks} → {after}")
+    logger.info(f"Fertig. {len(new_chunks)} neue Chunks hinzugefügt. DB: {total_chunks} → {after}")
 
 
 if __name__ == "__main__":

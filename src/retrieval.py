@@ -45,7 +45,7 @@ PROMPT = PromptTemplate(
 
 # Config
 CHROMA_DIR = "chroma_db"
-EMBEDDING_MODEL_NAME = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+EMBEDDING_MODEL_NAME = "deepset/gbert-base"
 LLM_MODEL_PATH = "models/mistral-7b-instruct-v0.2.Q4_K_M.gguf"
 TOP_K = 8
 
