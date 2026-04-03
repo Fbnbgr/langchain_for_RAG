@@ -28,7 +28,7 @@ Vektordatenbank
 - [Chroma DB](https://www.trychroma.com/)
 
 Embedding Model
-- paraphrase-multilingual-MiniLM-L12-v2 per Huggingface
+- deepset/gbert-base per Huggingface
 
 langsmith
 - evaluation
@@ -38,7 +38,7 @@ langsmith
 - indexiert alle PDFs in data/pdfs und speichert diese in Chroma DB
 
 ### retrieval
-- Funktionen RAG.Workflow
+- Funktionen RAG-Workflow
 - cli bei direktem Aufruf
 
 ### evaluation
@@ -53,4 +53,18 @@ example .env:
 LANGSMITH_TRACING_V2=true
 LANGSMITH_API_KEY=lsv2_...
 LANGSMITH_ENDPOINT=https://eu.api.smith.langchain.com
+```
+
+example.py:
+```
+examples = [
+    {
+        "inputs": {"question": "?"},
+        "outputs": {"answer": ""},
+    },
+    {
+        "inputs": {"question": "?"},
+        "outputs": {"answer": ""},
+    },
+]
 ```
