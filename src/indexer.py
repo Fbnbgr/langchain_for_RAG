@@ -98,7 +98,15 @@ def main():
         logger.info("Keine neuen PDFs gefunden. Nichts zu tun.")
         return
 
-    vectordb.add_documents(new_chunks)
+    logger.info(f"Füge die Dokumente der Vektordatenbank hinzu...")
+
+    # vectordb.add_documents(new_chunks)
+    vectordb._collection.add(
+        ids=[str(i) for i in range(len(new_chunks))],
+        documents=[chunk.page_content for chunk in new_chunks],
+        metadatas=[chunk.metadata for chunk in new_chunks],
+        embeddings=embeddings.embed_documents([chunk.page_content for chunk in new_chunks])
+    )
     after = vectordb._collection.count()
     logger.info(f"Fertig. {len(new_chunks)} neue Chunks hinzugefügt. DB: {total_chunks} → {after}")
 
