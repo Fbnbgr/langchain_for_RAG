@@ -1,4 +1,5 @@
-chroma_db/
+chroma_db/chroma.sqlite3
+chroma_db/b8cd7033-26dc-496f-93fc-cf808570fb37
 data/pdfs
 models/
 .env

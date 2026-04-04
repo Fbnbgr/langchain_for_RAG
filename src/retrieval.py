@@ -14,6 +14,7 @@ from langchain_core.prompts import PromptTemplate
 from sentence_transformers import CrossEncoder
 from langchain_community.retrievers import BM25Retriever
 from langchain_core.documents import Document
+import os
 
 
 # Prompt Template
@@ -47,12 +48,12 @@ PROMPT = PromptTemplate(
 CHROMA_DIR = "chroma_db"
 EMBEDDING_MODEL_NAME = "deepset/gbert-base"
 LLM_MODEL_PATH = "models/mistral-7b-instruct-v0.2.Q4_K_M.gguf"
-TOP_K = 8
+TOP_K = 5
 
 # leichtgewichtiges, multilingual / deutschfähiges Modell für Re-Ranking Crossencoder
 cross_encoder = CrossEncoder("cross-encoder/ms-marco-TinyBERT-L-2-v2")
 
-def rerank_candidates(query, docs, cross_encoder, top_k=8):
+def rerank_candidates(query, docs, cross_encoder, top_k=5):
     # Re-Rankt eine Liste von Dokumenten-Chunks nach Relevanz zur Frage.
     pairs = [(query, doc.page_content) for doc in docs]
     scores = cross_encoder.predict(pairs)
@@ -62,7 +63,8 @@ def rerank_candidates(query, docs, cross_encoder, top_k=8):
     scored_docs.sort(key=lambda x: x[0], reverse=True)
 
     # Filtern mit Schwellenwert
-    filtered = [(score, doc) for score, doc in scored_docs if score > 0.3]
+    print(f"Scores: min={min(scores):.2f}, max={max(scores):.2f}, alle={[f'{s:.2f}' for s in scores]}")
+    filtered = [(score, doc) for score, doc in scored_docs if score > -2.0]
 
     # Fallback: Wenn kein Dokument über dem Schwellenwert liegt, nimm das bestbewertete Dokument
     return filtered[:top_k] if filtered else scored_docs[:1]
@@ -81,7 +83,8 @@ vectordb = Chroma(
 
 retriever = vectordb.as_retriever(
     search_type="similarity_score_threshold",
-    search_kwargs={"k": TOP_K, "score_threshold": 0.2}
+    # mind. x % Ähnlichkeit, damit es als Treffer gilt
+    search_kwargs={"k": TOP_K, "score_threshold": 0.3}
 )
 
 # LLM (lokal, CPU)
@@ -90,6 +93,10 @@ llm = LlamaCpp(
     temperature=0.1,
     max_tokens=512,
     n_ctx=4096,
+    n_batch=512,
+    n_threads=os.cpu_count(),
+    # Mistral-spezifischer Stop-Token, um die Ausgabe zu beenden
+    stop=["</s>", "[INST]"],
     verbose=False
 )
 

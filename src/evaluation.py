@@ -78,6 +78,8 @@ grader_llm = LlamaCpp(
     # parallele Verarbeitung von x Tokens
     n_batch=512,
     n_threads=os.cpu_count(),
+    # stoppt nach dem JSON-Output
+    stop=["}", "\n"],
     # logs
     verbose=True
 )
