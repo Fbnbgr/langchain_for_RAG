@@ -7,7 +7,6 @@ from retrieval import hybrid_search, rerank_candidates, qa_chain, cross_encoder,
 import os
 from langsmith import traceable
 from dotenv import load_dotenv
-import time
 
 # import for test cases
 from data.evaluation.examples import examples
@@ -18,19 +17,24 @@ LLM_MODEL_PATH = "models/mistral-7b-instruct-v0.2.Q4_K_M.gguf"
 
 client = Client()
 
-dataset_name = "examples"
+dataset_name = "catan"
 
 try:
     dataset = client.read_dataset(dataset_name=dataset_name)
-    print(f"Dataset bereits vorhanden: {dataset.id}")
+    # Alte Examples löschen und neu anlegen
+    existing = list(client.list_examples(dataset_id=dataset.id))
+    for ex in existing:
+        client.delete_example(ex.id)
+    print(f"Dataset gefunden, {len(existing)} alte Examples gelöscht")
 except Exception:
     dataset = client.create_dataset(dataset_name=dataset_name)
-    client.create_examples(
-        dataset_id=dataset.id,
-        inputs=[e["inputs"] for e in examples],
-        outputs=[e["outputs"] for e in examples],
-    )
-    print(f"Dataset erstellt und {len(examples)} Examples hochgeladen")
+    print("Dataset neu erstellt")
+
+client.create_examples(
+    dataset_id=dataset.id,
+    inputs=[e["inputs"] for e in examples],
+    outputs=[e["outputs"] for e in examples],
+)
 
 @traceable
 def target(inputs: dict) -> dict:

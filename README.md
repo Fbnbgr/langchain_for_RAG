@@ -6,6 +6,8 @@ git clone https://github.com/Fbnbgr/langchain_setup
 
 Download [Mistral 7B from Huggingface](https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF/blob/main/mistral-7b-instruct-v0.2.Q4_K_M.gguf) -> Ablage unter ./models
 
+.env anlegen (siehe evaluation)
+
 docker compose build
 
 docker compose up -d
@@ -47,6 +49,7 @@ langsmith
 - setup (obligatorisch):
     - import Datei mit Fragen erstellen (data/evaluation/examples.py)
     - .env file muss angelegt werden
+    - dataset_name ggf. anpassen
 
 example .env:
 ```
@@ -55,7 +58,7 @@ LANGSMITH_API_KEY=lsv2_...
 LANGSMITH_ENDPOINT=https://eu.api.smith.langchain.com
 ```
 
-example.py:
+examples.py:
 ```
 examples = [
     {

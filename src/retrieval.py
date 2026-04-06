@@ -16,7 +16,6 @@ from langchain_community.retrievers import BM25Retriever
 from langchain_core.documents import Document
 import os
 
-
 # Prompt Template
 prompt_template = """[INST]
 Du bist ein präziser Dokumentenassistent.
@@ -63,8 +62,12 @@ def rerank_candidates(query, docs, cross_encoder, top_k=5):
     scored_docs.sort(key=lambda x: x[0], reverse=True)
 
     # Filtern mit Schwellenwert
-    print(f"Scores: min={min(scores):.2f}, max={max(scores):.2f}, alle={[f'{s:.2f}' for s in scores]}")
-    filtered = [(score, doc) for score, doc in scored_docs if score > -2.0]
+    filtered = [(score, doc) for score, doc in scored_docs if score > 1.0]
+    if filtered:
+        scores_only = [score for score, doc in filtered]
+        print(f"Scores nach Sortierung/Filter: min={min(scores_only):.2f}, max={max(scores_only):.2f}, alle={[f'{s:.2f}' for s in scores_only]}")
+    else:
+        print("Keine Dokumente über Schwellenwert.")
 
     # Fallback: Wenn kein Dokument über dem Schwellenwert liegt, nimm das bestbewertete Dokument
     return filtered[:top_k] if filtered else scored_docs[:1]
@@ -129,12 +132,12 @@ def hybrid_search(query, k=TOP_K):
 
     # Embeddings-basierte Suche (Semantik)
     emb = retriever.invoke(query)
-    print(f"EMB Treffer: {len(emb)}")
+    # print(f"EMB Treffer: {len(emb)}")
     # BM25-basierte Suche (lexikalisch)
     bm25 = bm25_retriever.invoke(query)
-    print(f"BM25 Treffer: {len(bm25)}")
+    # print(f"BM25 Treffer: {len(bm25)}")
 
-    # Gewichtung -> aktuell Semantik höher gewichtet
+    # Gewichtung
     emb_weight = 0.7
     bm25_weight = 0.3
 
