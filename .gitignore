@@ -1,6 +1,7 @@
-chroma_db/chroma.sqlite3
-chroma_db/b8cd7033-26dc-496f-93fc-cf808570fb37
+chroma_db/
 data/pdfs
 models/
 .env
 data/evaluation/examples.py
+evaluation/__pycache__/
+src/__pycache__/
