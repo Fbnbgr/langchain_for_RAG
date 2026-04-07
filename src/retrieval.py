@@ -1,5 +1,5 @@
 # LLM (LangChain-kompatibel)
-from langchain_community.llms import LlamaCpp
+from langchain_ollama import ChatOllama
 
 # RAG Chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
@@ -46,7 +46,6 @@ PROMPT = PromptTemplate(
 # Config
 CHROMA_DIR = "chroma_db"
 EMBEDDING_MODEL_NAME = "deepset/gbert-base"
-LLM_MODEL_PATH = "models/mistral-7b-instruct-v0.2.Q4_K_M.gguf"
 TOP_K = 5
 
 # leichtgewichtiges, multilingual / deutschfähiges Modell für Re-Ranking Crossencoder
@@ -91,8 +90,9 @@ retriever = vectordb.as_retriever(
 )
 
 # LLM (lokal, CPU)
-llm = LlamaCpp(
-    model_path=LLM_MODEL_PATH,
+llm = ChatOllama(
+    model="mistral",
+    base_url="http://host.docker.internal:11434",
     temperature=0.1,
     max_tokens=512,
     n_ctx=4096,

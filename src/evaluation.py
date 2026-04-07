@@ -1,5 +1,5 @@
 from typing_extensions import Annotated, TypedDict
-from langchain_community.llms import LlamaCpp
+from langchain_ollama import ChatOllama
 from pathlib import Path
 from langsmith import Client
 from langsmith.evaluation import evaluate
@@ -12,8 +12,6 @@ from dotenv import load_dotenv
 from data.evaluation.examples import examples
 env_path = dotenv_path=Path(__file__).parent.parent / ".env"
 load_dotenv(dotenv_path = env_path)
-
-LLM_MODEL_PATH = "models/mistral-7b-instruct-v0.2.Q4_K_M.gguf"
 
 client = Client()
 
@@ -72,8 +70,9 @@ A correctness value of False means that the student's answer does not meet all o
 Explain your reasoning in a step-by-step manner to ensure your reasoning and conclusion are correct. Avoid simply stating the correct answer at the outset."""
 
 # Grader LLM
-grader_llm = LlamaCpp(
-    model_path=LLM_MODEL_PATH,
+grader_llm = ChatOllama(
+    model="mistral",
+    base_url="http://host.docker.internal:11434",
     temperature=0.1,
     # max anzahl an auszugebenden Tokens (soll nur 1 Token ausgeben)
     max_tokens=64,
@@ -99,7 +98,7 @@ STUDENT ANSWER: {outputs['answer']}"""
     
     grade = grader_llm.invoke(prompt)
     
-    return "true" in grade.lower()
+    return "true" in grade.content.lower()
 
 @traceable
 def evaluation():

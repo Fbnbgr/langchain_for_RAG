@@ -20,6 +20,8 @@ services:
     stdin_open: true
     tty: true
     command: ["python", "src/retrieval.py"]
+    extra_hosts:
+      - "host.docker.internal:host-gateway" 
   
   evaluation:
     build: .
@@ -35,4 +37,6 @@ services:
       - ./data/evaluation:/app/data/evaluation     
     env_file:
       - .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway" 
     
