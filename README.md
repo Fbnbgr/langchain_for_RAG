@@ -5,7 +5,7 @@ ollama
 - wird auf localhost:11434 mit Mistral erwartet
 - alternativ anderes LLM serven und anpassen
 ## Schnellstart
-
+### development
 git clone https://github.com/Fbnbgr/langchain_for_RAG
 
 .env anlegen (siehe evaluation)
@@ -14,7 +14,34 @@ docker compose build
 
 docker compose up -d
 
-docker compose run --rm
+docker compose run --rm RAG-pipeline
+
+### deployment
+docker-compose.yml
+```
+services:
+  RAG-pipeline:
+    build: .
+    image: fbnbgr/rag:latest
+    command: ["python", "src/run_pipeline.py"]  
+    working_dir: /app
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./chroma_db:/app/chroma_db  
+      - ./data/evaluation:/app/data/evaluation
+    env_file:
+      - .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+```   
+
+docker compose pull
+
+.env anlegen (siehe evaluation)
+
+docker compose run --rm RAG-pipeline
 
 ## Techstack
 Framework
