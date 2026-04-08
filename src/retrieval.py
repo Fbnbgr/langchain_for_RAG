@@ -110,26 +110,33 @@ qa_chain = create_stuff_documents_chain(
 )
 
 # BM25 Retriever
-# Alle Dokumente laden aus Chroma
-all_docs = vectordb.get()
+_bm25_retriever = None
 
-documents = []
-for i in range(len(all_docs["documents"])):
-    
-    documents.append(
+# lazy loading, damit die Dokumente erst geladen werden, wenn die Evaluation gestartet wird
+def get_bm25_retriever():
+    global _bm25_retriever
+    if _bm25_retriever is not None:
+        return _bm25_retriever
+
+    all_docs = vectordb.get()
+    documents = [
         Document(
             page_content=all_docs["documents"][i],
             metadata=all_docs["metadatas"][i]
         )
-    )
+        for i in range(len(all_docs["documents"]))
+    ]
 
-# BM25 Retriever
-bm25_retriever = BM25Retriever.from_documents(documents)
+    if not documents:
+        raise RuntimeError("Chroma DB ist leer – bitte zuerst den Indexer ausführen.")
 
-bm25_retriever.k = TOP_K
+    _bm25_retriever = BM25Retriever.from_documents(documents)
+    _bm25_retriever.k = TOP_K
+    return _bm25_retriever
 
 def hybrid_search(query, k=TOP_K):
 
+    bm25_retriever = get_bm25_retriever()
     # Embeddings-basierte Suche (Semantik)
     emb = retriever.invoke(query)
     # print(f"EMB Treffer: {len(emb)}")

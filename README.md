@@ -10,6 +10,10 @@ git clone https://github.com/Fbnbgr/langchain_for_RAG
 
 .env anlegen (siehe evaluation)
 
+pdfs unter data/pdfs ablegen
+
+Beispielfragen und -antworten unter data/evaluation ablegen (siehe unten)
+
 docker compose build
 
 docker compose up -d
@@ -17,6 +21,8 @@ docker compose up -d
 docker compose run --rm RAG-pipeline
 
 ### deployment
+Beispielpdf/Fragen enthalten
+
 docker-compose.yml
 ```
 services:
