@@ -114,6 +114,5 @@ def evaluation():
 
 if __name__ == "__main__":
     results = evaluation()
-    # print(results)
     print("Evaluation finished")
     

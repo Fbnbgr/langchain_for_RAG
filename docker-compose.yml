@@ -1,38 +1,14 @@
 services:
-  indexer:
+  RAG-pipeline:
     build: .
-    volumes:
-      - ./data/pdfs:/app/data/pdfs
-      - ./chroma_db:/app/chroma_db
-      - ./src:/app/src
-    environment:
-      - PYTHONUNBUFFERED=1
-    command: ["python", "src/indexer.py"]
-
-  retrieval:
-    build: .
-    volumes:
-      - ./chroma_db:/app/chroma_db
-      - ./src:/app/src
-      - ./models:/app/models
-    environment:
-      - PYTHONUNBUFFERED=1
-    stdin_open: true
-    tty: true
-    command: ["python", "src/retrieval.py"]
-    extra_hosts:
-      - "host.docker.internal:host-gateway" 
-  
-  evaluation:
-    build: .
-    command: ["python", "src/evaluation.py"]     
+    image: fbnbgr/rag:latest
+    command: ["python", "src/run_pipeline.py"]     
     working_dir: /app
     environment:
       - PYTHONPATH=/app
       - PYTHONUNBUFFERED=1
     volumes:
-      - ./chroma_db:/app/chroma_db      
-      - ./models:/app/models    
+      - ./chroma_db:/app/chroma_db       
       - ./src:/app/src  
       - ./data/evaluation:/app/data/evaluation     
     env_file:

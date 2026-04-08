@@ -43,7 +43,7 @@ def load_existing_hashes(vectordb: Chroma) -> set[str]:
         pass
     return existing
 
-def main():
+def run_indexer():
     start = time.time()
     if not os.path.exists(PDF_DIR):
         raise RuntimeError(f"PDF-Ordner existiert nicht: {PDF_DIR}")
@@ -112,4 +112,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    run_indexer()
