@@ -6,7 +6,7 @@ ollama
 - alternativ anderes LLM serven und anpassen
 ## Schnellstart
 
-git clone https://github.com/Fbnbgr/langchain_setup
+git clone https://github.com/Fbnbgr/langchain_for_RAG
 
 .env anlegen (siehe evaluation)
 
@@ -14,11 +14,7 @@ docker compose build
 
 docker compose up -d
 
-docker compose run --rm indexer
-
-docker compose run --rm retrieval
-
-docker compose run --rm evaluation
+docker compose run --rm
 
 ## Techstack
 Framework
@@ -43,7 +39,6 @@ langsmith
 
 ### retrieval
 - Funktionen RAG-Workflow
-- cli bei direktem Aufruf
 
 ### evaluation
 - evaluiert Beispielfragen aus data/evaluation/examples.py und sendet die Ergebnisse an langsmith

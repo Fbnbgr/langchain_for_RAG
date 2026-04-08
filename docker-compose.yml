@@ -2,17 +2,17 @@ services:
   RAG-pipeline:
     build: .
     image: fbnbgr/rag:latest
-    command: ["python", "src/run_pipeline.py"]     
+    command: ["python", "src/run_pipeline.py"]  
     working_dir: /app
     environment:
       - PYTHONPATH=/app
       - PYTHONUNBUFFERED=1
     volumes:
-      - ./chroma_db:/app/chroma_db       
-      - ./src:/app/src  
-      - ./data/evaluation:/app/data/evaluation     
+      - ./chroma_db:/app/chroma_db  
+      - ./src:/app/src
+      - ./data/evaluation:/app/data/evaluation
     env_file:
       - .env
     extra_hosts:
-      - "host.docker.internal:host-gateway" 
+      - "host.docker.internal:host-gateway"
     
