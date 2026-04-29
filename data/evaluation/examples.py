@@ -19,4 +19,16 @@ examples = [
         "inputs": {"question": "Was passiert beim Würfeln einer 7?"},
         "outputs": {"answer": "Das Würfeln einer 7 aktiviert den Räuber. In diesem Zug bekommt niemand Rohstoffe und wer mehr als 7 Karten hat, muss die Hälfte seiner Karten ablegen."},
     },
+            {
+        "inputs": {"question": "Wieviele Lesesäle gibt es in Leipzig"},
+        "outputs": {"answer": "8"},
+    },
+            {
+        "inputs": {"question": "Kann man Medien in der Deutschen Nationalbibliothek mit nach Hause nehmen?"},
+        "outputs": {"answer": "Nein"},
+    },
+            {
+        "inputs": {"question": "Ab welchem Alter darf man die Deutsche Nationalbibliothek nutzen?"},
+        "outputs": {"answer": "16"},
+    },
 ]

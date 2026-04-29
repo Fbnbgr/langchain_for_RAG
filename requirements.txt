@@ -11,3 +11,5 @@ langsmith==0.2.10
 python-dotenv
 tiktoken
 langchain_ollama
+beautifulsoup4
+requests

@@ -137,6 +137,7 @@ def get_bm25_retriever():
 def hybrid_search(query, k=TOP_K):
 
     bm25_retriever = get_bm25_retriever()
+    
     # Embeddings-basierte Suche (Semantik)
     emb = retriever.invoke(query)
     # print(f"EMB Treffer: {len(emb)}")
