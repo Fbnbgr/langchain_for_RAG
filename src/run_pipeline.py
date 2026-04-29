@@ -1,4 +1,5 @@
-from venv import logger
+import logging
+logger = logging.getLogger(__name__)
 
 from indexer import run_indexer
 from evaluation import evaluation
