@@ -11,6 +11,7 @@ services:
       - ./chroma_db:/app/chroma_db  
       - ./src:/app/src
       - ./data/evaluation:/app/data/evaluation
+      - ./data/pdfs:/app/data/pdfs
     env_file:
       - .env
     extra_hosts:
