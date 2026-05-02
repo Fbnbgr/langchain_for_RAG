@@ -75,11 +75,11 @@ def run_indexer(sources: list[Document] | None = None) -> None:
         chunk_overlap=CHUNK_OVERLAP,
     )
 
-    # PDFs laden (Standardfall)
-    pdf_docs = load_pdfs(PDF_DIR, existing_hashes)
+    # Webscraping
+    external_docs = scrape_website("https://kunstbibliothek.skd.museum/", debug_output = True)
 
-    # Optionale externe Quellen (z.B. Webscraper)
-    external_docs = scrape_website("https://www.dnb.de", debug_output = True)
+    # PDFs laden
+    pdf_docs = load_pdfs(PDF_DIR, existing_hashes)
 
     all_docs = pdf_docs + external_docs
 
