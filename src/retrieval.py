@@ -49,7 +49,7 @@ EMBEDDING_MODEL_NAME = "deepset/gbert-base"
 TOP_K = 5
 
 # leichtgewichtiges, multilingual / deutschfähiges Modell für Re-Ranking Crossencoder
-cross_encoder = CrossEncoder("cross-encoder/ms-marco-TinyBERT-L-2-v2")
+cross_encoder = CrossEncoder("cross-encoder/mmarco-mMiniLMv2-L12-H384-v1")
 
 def rerank_candidates(query, docs, cross_encoder, top_k=5):
     # Re-Rankt eine Liste von Dokumenten-Chunks nach Relevanz zur Frage.
