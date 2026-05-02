@@ -6,20 +6,19 @@ from langsmith.evaluation import evaluate
 from retrieval import hybrid_search, rerank_candidates, qa_chain, cross_encoder, TOP_K
 import os
 from langsmith import traceable
-from dotenv import load_dotenv
 import json
 import logging
 
 # import for test cases
 from data.evaluation.examples import examples
-env_path = dotenv_path=Path(__file__).parent.parent / ".env"
-load_dotenv(dotenv_path = env_path)
 
 logger = logging.getLogger(__name__)
 
 client = Client()
 
-dataset_name = "test-dataset"
+dataset_name = os.getenv("dataset_name", "test-dataset")
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+GRADER_MODEL = os.getenv("GRADER_MODEL", "mistral")
 
 try:
     dataset = client.read_dataset(dataset_name=dataset_name)
@@ -75,8 +74,8 @@ Explain your reasoning in a step-by-step manner to ensure your reasoning and con
 
 # Grader LLM
 grader_llm = ChatOllama(
-    model="mistral",
-    base_url="http://host.docker.internal:11434",
+    model=GRADER_MODEL,
+    base_url=OLLAMA_BASE_URL,
     temperature=0.1,
     # max anzahl an auszugebenden Tokens (soll nur 1 Token ausgeben)
     max_tokens=64,

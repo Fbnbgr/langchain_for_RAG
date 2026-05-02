@@ -44,14 +44,14 @@ PROMPT = PromptTemplate(
 )
 
 # Config
-CHROMA_DIR = "chroma_db"
-EMBEDDING_MODEL_NAME = "deepset/gbert-base"
-TOP_K = 5
-
+CHROMA_DIR = os.getenv("CHROMA_DIR", "chroma_db")
+EMBEDDING_MODEL_NAME = os.getenv("EMBEDDING_MODEL_NAME", "deepset/gbert-base")
+TOP_K = int(os.getenv("TOP_K", 5))
+SCORE_THRESHOLD = float(os.getenv("SCORE_THRESHOLD", 0.3))
 # leichtgewichtiges, multilingual / deutschfähiges Modell für Re-Ranking Crossencoder
-cross_encoder = CrossEncoder("cross-encoder/mmarco-mMiniLMv2-L12-H384-v1")
+cross_encoder = CrossEncoder(os.getenv("CROSS_ENCODER_MODEL_NAME", "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1"))
 
-def rerank_candidates(query, docs, cross_encoder, top_k=5):
+def rerank_candidates(query, docs, cross_encoder, TOP_K=5):
     # Re-Rankt eine Liste von Dokumenten-Chunks nach Relevanz zur Frage.
     pairs = [(query, doc.page_content) for doc in docs]
     scores = cross_encoder.predict(pairs)
@@ -61,7 +61,7 @@ def rerank_candidates(query, docs, cross_encoder, top_k=5):
     scored_docs.sort(key=lambda x: x[0], reverse=True)
 
     # Filtern mit Schwellenwert
-    filtered = [(score, doc) for score, doc in scored_docs if score > 1.0]
+    filtered = [(score, doc) for score, doc in scored_docs if score > SCORE_THRESHOLD]
     if filtered:
         scores_only = [score for score, doc in filtered]
         print(f"Scores nach Sortierung/Filter: min={min(scores_only):.2f}, max={max(scores_only):.2f}, alle={[f'{s:.2f}' for s in scores_only]}")
@@ -69,7 +69,7 @@ def rerank_candidates(query, docs, cross_encoder, top_k=5):
         print("Keine Dokumente über Schwellenwert.")
 
     # Fallback: Wenn kein Dokument über dem Schwellenwert liegt, nimm das bestbewertete Dokument
-    return filtered[:top_k] if filtered else scored_docs[:1]
+    return filtered[:TOP_K] if filtered else scored_docs[:1]
 
 # Embeddings
 embeddings = HuggingFaceEmbeddings(
@@ -86,13 +86,13 @@ vectordb = Chroma(
 retriever = vectordb.as_retriever(
     search_type="similarity_score_threshold",
     # mind. x % Ähnlichkeit, damit es als Treffer gilt
-    search_kwargs={"k": TOP_K, "score_threshold": 0.3}
+    search_kwargs={"k": TOP_K, "score_threshold": float(os.getenv("SCORE_THRESHOLD", 0.3))}
 )
 
 # LLM (lokal, CPU)
 llm = ChatOllama(
-    model="mistral",
-    base_url="http://host.docker.internal:11434",
+    model=os.getenv("LLM_MODEL_NAME", "mistral-7b-instruct-v0.1.Q4_0.gguf"),
+    base_url=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),
     temperature=0.1,
     max_tokens=512,
     n_ctx=4096,
@@ -146,8 +146,8 @@ def hybrid_search(query, k=TOP_K):
     # print(f"BM25 Treffer: {len(bm25)}")
 
     # Gewichtung
-    emb_weight = 0.7
-    bm25_weight = 0.3
+    emb_weight = float(os.getenv("EMB_WEIGHT", 0.7))
+    bm25_weight = float(os.getenv("BM25_WEIGHT", 0.3))
 
     scored = {}
 

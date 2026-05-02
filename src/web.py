@@ -1,4 +1,5 @@
 import logging
+import os
 import time
 from pathlib import Path
 from urllib.parse import urljoin, urlparse
@@ -9,12 +10,12 @@ from langchain_core.documents import Document
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_DELAY = 1.0
-MAX_PAGES = 100
-REQUEST_TIMEOUT = 10
-USER_AGENT = "RAG-Crawler/1.0"
-DEBUG_OUTPUT_DIR = Path("data/debug")
-PDF_DOWNLOAD_DIR = Path("data/pdfs")
+DEFAULT_DELAY = float(os.getenv("CRAWL_DELAY", 1.0))
+MAX_PAGES = int(os.getenv("MAX_PAGES", 100))
+REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", 10))
+USER_AGENT = os.getenv("USER_AGENT", "RAG-Crawler/1.0")
+DEBUG_OUTPUT_DIR = Path(os.getenv("DEBUG_OUTPUT_DIR", "data/debug"))
+PDF_DOWNLOAD_DIR = Path(os.getenv("PDF_DOWNLOAD_DIR", "data/pdfs"))
 
 
 # ---------------------------------------------------------------------------
