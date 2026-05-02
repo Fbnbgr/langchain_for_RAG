@@ -7,15 +7,19 @@ from retrieval import hybrid_search, rerank_candidates, qa_chain, cross_encoder,
 import os
 from langsmith import traceable
 from dotenv import load_dotenv
+import json
+import logging
 
 # import for test cases
 from data.evaluation.examples import examples
 env_path = dotenv_path=Path(__file__).parent.parent / ".env"
 load_dotenv(dotenv_path = env_path)
 
+logger = logging.getLogger(__name__)
+
 client = Client()
 
-dataset_name = "catan"
+dataset_name = "test-dataset"
 
 try:
     dataset = client.read_dataset(dataset_name=dataset_name)
@@ -98,7 +102,13 @@ STUDENT ANSWER: {outputs['answer']}"""
     
     grade = grader_llm.invoke(prompt)
     
-    return "true" in grade.content.lower()
+    try:
+        raw = grade.content.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
+        result = json.loads(raw)
+        return bool(result["correct"])
+    except (json.JSONDecodeError, KeyError, TypeError) as e:
+        logger.warning(f"Grader-Output konnte nicht geparst werden: {grade.content!r} — Fehler: {e}")
+        return False
 
 @traceable
 def evaluation():
