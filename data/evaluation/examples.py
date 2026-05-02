@@ -1,34 +1,14 @@
 examples = [
     {
-        "inputs": {"question": "Wieviele Straßen bekommt jeder Spieler am Anfang?"},
-        "outputs": {"answer": "15 Straßen"},
-    },
-    {
-        "inputs": {"question": "Wieviele Siedlungen, Städte und Straßen bekommt jeder Spieler am Anfang?"},
-        "outputs": {"answer": "5 Siedlungen, 4 Städte und 15 Straßen"},
-    },
-    {
-        "inputs": {"question": "Wer beginnt das Spiel?"},
-        "outputs": {"answer": "Es beginnt der älteste Spieler."},
-    },
-        {
-        "inputs": {"question": "Was erfordert eine Siedlung?"},
-        "outputs": {"answer": "Lehm, Holz, Wolle, Getreide"},
-    },
-        {
-        "inputs": {"question": "Was passiert beim Würfeln einer 7?"},
-        "outputs": {"answer": "Das Würfeln einer 7 aktiviert den Räuber. In diesem Zug bekommt niemand Rohstoffe und wer mehr als 7 Karten hat, muss die Hälfte seiner Karten ablegen."},
+        "inputs": {"question": "Wie sind die Öffnungszeiten der Kunstbibliothek im Residenzschloss?"},
+        "outputs": {"answer": "Mo, Mi bis Fr 10 – 16 Uhr"},
     },
             {
-        "inputs": {"question": "Wieviele Lesesäle gibt es in Leipzig"},
-        "outputs": {"answer": "8"},
+        "inputs": {"question": "was ist die Adresse der Kunstbibliothek im Residenzschloss?"},
+        "outputs": {"answer": "Taschenberg 2, 01067 Dresden"},
     },
             {
-        "inputs": {"question": "Kann man Medien in der Deutschen Nationalbibliothek mit nach Hause nehmen?"},
-        "outputs": {"answer": "Nein"},
-    },
-            {
-        "inputs": {"question": "Ab welchem Alter darf man die Deutsche Nationalbibliothek nutzen?"},
-        "outputs": {"answer": "16"},
+        "inputs": {"question": "Wann ist die Ausstellung William Kentridge. Listen to the Echo zu sehen?"},
+        "outputs": {"answer": "Residenzschloss, 06.09.2025—15.02.2026; Albertinum, 06.09.2025—04.01.2026; Puppentheatersammlung im Kraftwerk Mitte, 06.09.2025—28.06.2026"},
     },
 ]
