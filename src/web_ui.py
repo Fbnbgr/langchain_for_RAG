@@ -41,11 +41,12 @@ def index():
         # Antwort generieren
         answer = qa_chain.invoke({"context": top_docs, "input": query})
         
-        # Quellen sammeln (wie in CLI)
+        # Quellen sammeln
         sources = [
-            f"{doc.metadata.get('source_file')} Seite {doc.metadata.get('page')}: {doc.page_content[:200]}..."
+            f"{doc.metadata.get('source_file') or doc.metadata.get('source', 'unbekannt')} "
+            f"Seite {doc.metadata.get('page', '—')}: {doc.page_content[:200]}..."
             for doc in top_docs
-        ]
+]
     
     return render_template_string(HTML_TEMPLATE, answer=answer, sources=sources)
 

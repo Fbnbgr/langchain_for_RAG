@@ -27,6 +27,6 @@ def check_ollama() -> None:
 if __name__ == "__main__":
     check_ollama()
     logger.info(f"Prozess startet: Indexing")
-    # run_indexer()
+    run_indexer()
     logger.info(f"Prozess startet: Evaluation")
     evaluation()
