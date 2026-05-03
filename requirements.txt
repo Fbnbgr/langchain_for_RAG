@@ -13,3 +13,4 @@ tiktoken
 langchain_ollama
 beautifulsoup4
 requests
+flask

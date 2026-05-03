@@ -16,6 +16,8 @@ from langchain_community.retrievers import BM25Retriever
 from langchain_core.documents import Document
 import os
 
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://host.docker.internal:11434")
+
 # Prompt Template
 prompt_template = """[INST]
 Du bist ein präziser Dokumentenassistent.
@@ -91,8 +93,8 @@ retriever = vectordb.as_retriever(
 
 # LLM (lokal, CPU)
 llm = ChatOllama(
-    model=os.getenv("LLM_MODEL_NAME", "mistral-7b-instruct-v0.1.Q4_0.gguf"),
-    base_url=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),
+    model=os.getenv("LLM_MODEL_NAME", "mistral"),
+    base_url=OLLAMA_BASE_URL,
     temperature=0.1,
     max_tokens=512,
     n_ctx=4096,

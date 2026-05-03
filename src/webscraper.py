@@ -15,8 +15,8 @@ MAX_PAGES = int(os.getenv("MAX_PAGES", 100))
 REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", 10))
 USER_AGENT = os.getenv("USER_AGENT", "RAG-Crawler/1.0")
 DEBUG_OUTPUT_DIR = Path(os.getenv("DEBUG_OUTPUT_DIR", "data/debug"))
-PDF_DOWNLOAD_DIR = Path(os.getenv("PDF_DOWNLOAD_DIR", "data/pdfs"))
-
+PDF_DOWNLOAD_DIR = Path(os.getenv("PDF_DIR", "data/pdfs"))
+    
 
 # ---------------------------------------------------------------------------
 # Robots.txt 

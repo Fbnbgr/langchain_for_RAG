@@ -9,12 +9,12 @@ from langchain_chroma import Chroma
 from langchain.schema import Document
 
 from pdf import load_pdfs
-from web import scrape_website
+from webscraper import scrape_website
 
 PDF_DIR = os.getenv("PDF_DIR", "data/pdfs")
 CHROMA_DIR = os.getenv("CHROMA_DIR", "chroma_db")
 EMBEDDING_MODEL_NAME = os.getenv("EMBEDDING_MODEL", "deepset/gbert-base")
-URL = os.getenv("SCRAPE_URL")
+SCRAPE_URL = os.getenv("SCRAPE_URL")
 
 CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", 256))
 CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", 25))
@@ -77,7 +77,7 @@ def run_indexer(sources: list[Document] | None = None) -> None:
     )
 
     # Webscraping
-    external_docs = scrape_website(URL, debug_output = True)
+    external_docs = scrape_website(SCRAPE_URL, debug_output = True)
 
     # PDFs laden
     pdf_docs = load_pdfs(PDF_DIR, existing_hashes)

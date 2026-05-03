@@ -16,4 +16,22 @@ services:
       - .env
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    
+  web-ui:
+    build: .
+    image: fbnbgr/rag:latest
+    command: ["python", "src/web_ui.py"]
+    working_dir: /app
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./chroma_db:/app/chroma_db
+      - ./src:/app/src
+      - ./data/evaluation:/app/data/evaluation
+      - ./data/pdfs:/app/data/pdfs
+    env_file:
+      - .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
