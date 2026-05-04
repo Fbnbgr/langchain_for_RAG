@@ -1,12 +1,12 @@
-import os
-import uuid
 import logging
+import os
 import time
+import uuid
 
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_chroma import Chroma
 from langchain.schema import Document
+from langchain_chroma import Chroma
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from pdf import load_pdfs
 from webscraper import scrape_website
@@ -40,7 +40,11 @@ def load_existing_hashes(vectordb: Chroma) -> set[str]:
     return existing
 
 
-def add_documents(vectordb: Chroma, embeddings: HuggingFaceEmbeddings, chunks: list[Document]) -> None:
+def add_documents(
+        vectordb: Chroma,
+        embeddings: HuggingFaceEmbeddings,
+        chunks: list[Document]
+        ) -> None:
     """Fügt Chunks mit stabilen UUIDs in die Chroma DB ein."""
     vectordb._collection.add(
         ids=[str(uuid.uuid4()) for _ in chunks],
@@ -96,7 +100,9 @@ def run_indexer(sources: list[Document] | None = None) -> None:
 
     duration = time.time() - start
     after = vectordb._collection.count()
-    logger.info(f"Fertig. {len(chunks)} neue Chunks hinzugefügt in {duration:.1f}s. DB-Größe: {after}")
+    logger.info(
+        f"Fertig. {len(chunks)} neue Chunks hinzugefügt in {duration:.1f}s. DB-Größe: {after}"
+        )
 
 
 if __name__ == "__main__":

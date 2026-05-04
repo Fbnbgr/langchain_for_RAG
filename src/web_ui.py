@@ -1,5 +1,6 @@
-from flask import Flask, request, render_template_string
-from retrieval import hybrid_search, rerank_candidates, qa_chain, cross_encoder, TOP_K
+from flask import Flask, render_template_string, request
+
+from retrieval import TOP_K, cross_encoder, hybrid_search, qa_chain, rerank_candidates
 
 app = Flask(__name__)
 

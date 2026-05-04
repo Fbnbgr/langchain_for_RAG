@@ -1,9 +1,10 @@
 import hashlib
-import os
 import logging
+import os
+
+import pypdf.errors
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_core.documents import Document
-import pypdf.errors
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +29,8 @@ def is_valid_pdf(path: str) -> bool:
         with open(path, "rb") as f:
             header = f.read(8)
         if not header.startswith(PDF_MAGIC_BYTES):
-            logger.warning(f"Ungültiger PDF-Header in '{path}': {header[:8]!r} — Datei wird übersprungen")
+            logger.warning(
+                f"Ungültiger PDF-Header in '{path}': {header[:8]!r} — Datei wird übersprungen")
             return False
         return True
     except OSError as e:
@@ -71,15 +73,18 @@ def load_pdfs(pdf_dir: str, existing_hashes: set[str]) -> list[Document]:
             loader = PyPDFLoader(path)
             docs = loader.load()
         except pypdf.errors.PdfStreamError as e:
-            logger.warning(f"Korruptes PDF '{file}' (Stream-Fehler): {e} — wird übersprungen")
+            logger.warning(
+                f"Korruptes PDF '{file}' (Stream-Fehler): {e} — wird übersprungen")
             skipped.append(file)
             continue
         except pypdf.errors.PdfReadError as e:
-            logger.warning(f"Korruptes PDF '{file}' (Lesefehler): {e} — wird übersprungen")
+            logger.warning(
+                f"Korruptes PDF '{file}' (Lesefehler): {e} — wird übersprungen")
             skipped.append(file)
             continue
         except Exception as e:
-            logger.warning(f"Unerwarteter Fehler beim Laden von '{file}': {type(e).__name__}: {e} — wird übersprungen")
+            logger.warning(
+                f"Unerwarteter Fehler beim Laden von '{file}': {type(e).__name__}: {e} — wird übersprungen")
             skipped.append(file)
             continue
 

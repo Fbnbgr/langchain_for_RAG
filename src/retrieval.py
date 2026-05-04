@@ -1,20 +1,19 @@
 # LLM (LangChain-kompatibel)
-from langchain_ollama import ChatOllama
+import os
 
 # RAG Chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
 
-# Embeddings
-from langchain_huggingface import HuggingFaceEmbeddings
-
 # Vectorstore
 from langchain_chroma import Chroma
-
-from langchain_core.prompts import PromptTemplate
-from sentence_transformers import CrossEncoder
 from langchain_community.retrievers import BM25Retriever
 from langchain_core.documents import Document
-import os
+from langchain_core.prompts import PromptTemplate
+
+# Embeddings
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_ollama import ChatOllama
+from sentence_transformers import CrossEncoder
 
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://host.docker.internal:11434")
 
@@ -66,7 +65,10 @@ def rerank_candidates(query, docs, cross_encoder, TOP_K=5):
     filtered = [(score, doc) for score, doc in scored_docs if score > SCORE_THRESHOLD]
     if filtered:
         scores_only = [score for score, doc in filtered]
-        print(f"Scores nach Sortierung/Filter: min={min(scores_only):.2f}, max={max(scores_only):.2f}, alle={[f'{s:.2f}' for s in scores_only]}")
+        print(
+            f"Scores nach Sortierung/Filter: min={min(scores_only):.2f},"
+            f"max={max(scores_only):.2f},"
+            f"alle={[f'{s:.2f}' for s in scores_only]}")
     else:
         print("Keine Dokumente über Schwellenwert.")
 

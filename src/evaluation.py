@@ -1,16 +1,15 @@
-from typing_extensions import Annotated, TypedDict
-from langchain_ollama import ChatOllama
-from pathlib import Path
-from langsmith import Client
-from langsmith.evaluation import evaluate
-from retrieval import hybrid_search, rerank_candidates, qa_chain, cross_encoder, TOP_K
-import os
-from langsmith import traceable
 import json
 import logging
+import os
+
+from langchain_ollama import ChatOllama
+from langsmith import Client, traceable
+from langsmith.evaluation import evaluate
+from typing_extensions import Annotated, TypedDict
 
 # import for test cases
 from data.evaluation.examples import examples
+from retrieval import TOP_K, cross_encoder, hybrid_search, qa_chain, rerank_candidates
 
 logger = logging.getLogger(__name__)
 
@@ -62,15 +61,19 @@ class CorrectnessGrade(TypedDict):
     correct: Annotated[bool, ..., "True if the answer is correct, False otherwise."]
 
 # Grade prompt
-correctness_instructions = """You are a teacher grading a quiz. You will be given a QUESTION, the GROUND TRUTH (correct) ANSWER, and the STUDENT ANSWER. Here is the grade criteria to follow:
-(1) Grade the student answers based ONLY on their factual accuracy relative to the ground truth answer. (2) Ensure that the student answer does not contain any conflicting statements.
-(3) It is OK if the student answer contains more information than the ground truth answer, as long as it is factually accurate relative to the  ground truth answer.
+correctness_instructions = """You are a teacher grading a quiz. You will be given a QUESTION,
+the GROUND TRUTH (correct) ANSWER, and the STUDENT ANSWER. Here is the grade criteria to follow:
+(1) Grade student answers based ONLY on their factual accuracy relative to the ground truth answer.
+(2) Ensure that the student answer does not contain any conflicting statements.
+(3) It is OK if the student answer contains more information than the ground truth answer,
+as long as it is factually accurate relative to the  ground truth answer.
 
 Correctness:
 A correctness value of True means that the student's answer meets all of the criteria.
 A correctness value of False means that the student's answer does not meet all of the criteria.
 
-Explain your reasoning in a step-by-step manner to ensure your reasoning and conclusion are correct. Avoid simply stating the correct answer at the outset."""
+Explain your reasoning in a step-by-step manner to ensure your reasoning and conclusion are correct.
+Avoid simply stating the correct answer at the outset."""
 
 # Grader LLM
 grader_llm = ChatOllama(
@@ -95,16 +98,29 @@ QUESTION: {inputs['question']}
 GROUND TRUTH ANSWER: {reference_outputs['answer']}
 STUDENT ANSWER: {outputs['answer']}"""
     # Run evaluator (Anpassung auf llamacpp)
-    prompt = f"{correctness_instructions}\n\n{answers}\n\nAntworte nur mit JSON: {{\"correct\": true}} oder {{\"correct\": false}}"
+    prompt = (
+        f"{correctness_instructions}\n\n"
+        f"{answers}\n\n"
+        f"Antworte nur mit JSON: {{\"correct\": true}} oder {{\"correct\": false}}"
+    )
     
     grade = grader_llm.invoke(prompt)
     
     try:
-        raw = grade.content.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
+        raw = (
+            grade.content
+            .strip()
+            .removeprefix("```json")
+            .removeprefix("```")
+            .removesuffix("```")
+            .strip()
+        )
         result = json.loads(raw)
         return bool(result["correct"])
     except (json.JSONDecodeError, KeyError, TypeError) as e:
-        logger.warning(f"Grader-Output konnte nicht geparst werden: {grade.content!r} — Fehler: {e}")
+        logger.warning(
+            f"Grader-Output konnte nicht geparst werden: {grade.content!r} — Fehler: {e}"
+            )
         return False
 
 @traceable

@@ -1,12 +1,13 @@
-import os
-import requests
 import logging
-logger = logging.getLogger(__name__)
+import os
 
+import requests
 from dotenv import load_dotenv
-from indexer import run_indexer
-from evaluation import evaluation
 
+from evaluation import evaluation
+from indexer import run_indexer
+
+logger = logging.getLogger(__name__)
 load_dotenv()
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://host.docker.internal:11434")
 
@@ -26,7 +27,7 @@ def check_ollama() -> None:
 
 if __name__ == "__main__":
     check_ollama()
-    logger.info(f"Prozess startet: Indexing")
+    logger.info("Prozess startet: Indexing")
     run_indexer()
-    logger.info(f"Prozess startet: Evaluation")
+    logger.info("Prozess startet: Evaluation")
     evaluation()
