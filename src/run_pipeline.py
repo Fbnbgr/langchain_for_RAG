@@ -5,7 +5,6 @@ import requests
 from dotenv import load_dotenv
 
 from evaluation import evaluation
-from indexer import run_indexer
 
 logger = logging.getLogger(__name__)
 load_dotenv()

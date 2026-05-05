@@ -1,23 +1,21 @@
-import json
 import logging
 import os
 
-from datasets import Dataset
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_ollama import ChatOllama
 from ragas import EvaluationDataset, SingleTurnSample, evaluate
-from ragas.llms import LangchainLLMWrapper
+from ragas.cost import TokenUsage
 from ragas.embeddings import LangchainEmbeddingsWrapper
+from ragas.llms import LangchainLLMWrapper
 from ragas.metrics import (
-    Faithfulness,
     AnswerRelevancy,
+    ContextEntityRecall,
     ContextPrecision,
     ContextRecall,
     FactualCorrectness,
+    Faithfulness,
     NoiseSensitivity,
-    ContextEntityRecall,
 )
-from ragas.cost import TokenUsage
-from langchain_ollama import ChatOllama
-from langchain_huggingface import HuggingFaceEmbeddings
 
 from data.evaluation.examples import examples
 from retrieval import TOP_K, cross_encoder, hybrid_search, qa_chain, rerank_candidates
