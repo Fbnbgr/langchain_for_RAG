@@ -1,6 +1,5 @@
 chroma_db/
 data/pdfs
-.env
 data/evaluation/examples.py
 data/evaluation/__pycache__/
 src/__pycache__/

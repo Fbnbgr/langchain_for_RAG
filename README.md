@@ -5,6 +5,9 @@ ollama
 - wird auf localhost:11434 mit Mistral erwartet
 - alternativ anderes LLM serven und anpassen
 ## Schnellstart
+### Konfiguration
+Alle Konfigurationen erfolgen über die `.env`-Datei.
+
 ### development
 git clone https://github.com/Fbnbgr/langchain_for_RAG
 
@@ -63,8 +66,11 @@ Vektordatenbank
 Embedding Model
 - deepset/gbert-base per Huggingface
 
-langsmith
-- evaluation
+Evaluation
+- [RAGAS](https://docs.ragas.io/) für automatisierte RAG-Evaluation
+
+Linting & Code-Qualität
+- [Ruff](https://astral.sh/ruff) als schneller Python-Linter und Formatter
 
 ## Ablauf
 ### indexer
@@ -74,21 +80,15 @@ langsmith
 - Funktionen RAG-Workflow
 
 ### evaluation
-- evaluiert Beispielfragen aus data/evaluation/examples.py und sendet die Ergebnisse an langsmith
+- evaluiert Beispielfragen aus data/evaluation/examples.py und berechnet RAGAS-Metriken (Faithfulness, Answer Relevancy, Context Relevancy)
 - LLM: Mistral
 - setup (obligatorisch):
     - import Datei mit Fragen erstellen (data/evaluation/examples.py)
     - .env file muss angelegt werden
     - dataset_name ggf. anpassen
 
-example .env:
-```
-LANGSMITH_TRACING_V2=true
-LANGSMITH_API_KEY=lsv2_...
-LANGSMITH_ENDPOINT=https://eu.api.smith.langchain.com
-```
-
 examples.py:
+
 ```
 examples = [
     {

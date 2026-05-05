@@ -2,140 +2,125 @@ import json
 import logging
 import os
 
+from datasets import Dataset
+from ragas import EvaluationDataset, SingleTurnSample, evaluate
+from ragas.llms import LangchainLLMWrapper
+from ragas.embeddings import LangchainEmbeddingsWrapper
+from ragas.metrics import (
+    Faithfulness,
+    AnswerRelevancy,
+    ContextPrecision,
+    ContextRecall,
+    FactualCorrectness,
+    NoiseSensitivity,
+    ContextEntityRecall,
+)
+from ragas.cost import TokenUsage
 from langchain_ollama import ChatOllama
-from langsmith import Client, traceable
-from langsmith.evaluation import evaluate
-from typing_extensions import Annotated, TypedDict
+from langchain_huggingface import HuggingFaceEmbeddings
 
-# import for test cases
 from data.evaluation.examples import examples
 from retrieval import TOP_K, cross_encoder, hybrid_search, qa_chain, rerank_candidates
 
 logger = logging.getLogger(__name__)
 
-client = Client()
-
-dataset_name = os.getenv("dataset_name", "test-dataset")
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 GRADER_MODEL = os.getenv("GRADER_MODEL", "mistral")
+EMBEDDING_MODEL_NAME = os.getenv("EMBEDDING_MODEL_NAME", "deepset/gbert-base")
 
-try:
-    dataset = client.read_dataset(dataset_name=dataset_name)
-    # Alte Examples löschen und neu anlegen
-    existing = list(client.list_examples(dataset_id=dataset.id))
-    for ex in existing:
-        client.delete_example(ex.id)
-    print(f"Dataset gefunden, {len(existing)} alte Examples gelöscht")
-except Exception:
-    dataset = client.create_dataset(dataset_name=dataset_name)
-    print("Dataset neu erstellt")
-
-client.create_examples(
-    dataset_id=dataset.id,
-    inputs=[e["inputs"] for e in examples],
-    outputs=[e["outputs"] for e in examples],
-)
-
-@traceable
-def target(inputs: dict) -> dict:
-    query = inputs["question"]
-    
-    # Candidate Retrieval
-    candidates = hybrid_search(query)
-    
-    # Re-Ranking
-    reranked = rerank_candidates(query, candidates, cross_encoder, TOP_K)
-    top_docs = [doc for score, doc in reranked]
-    
-    # LLM Antwort
-    answer = qa_chain.invoke({
-        "context": top_docs,
-        "input": query
-    })
-    
-    return {"answer": answer}
-
-# Grade output schema
-class CorrectnessGrade(TypedDict):
-    explanation: Annotated[str, ..., "Explain your reasoning for the score"]
-    correct: Annotated[bool, ..., "True if the answer is correct, False otherwise."]
-
-# Grade prompt
-correctness_instructions = """You are a teacher grading a quiz. You will be given a QUESTION,
-the GROUND TRUTH (correct) ANSWER, and the STUDENT ANSWER. Here is the grade criteria to follow:
-(1) Grade student answers based ONLY on their factual accuracy relative to the ground truth answer.
-(2) Ensure that the student answer does not contain any conflicting statements.
-(3) It is OK if the student answer contains more information than the ground truth answer,
-as long as it is factually accurate relative to the  ground truth answer.
-
-Correctness:
-A correctness value of True means that the student's answer meets all of the criteria.
-A correctness value of False means that the student's answer does not meet all of the criteria.
-
-Explain your reasoning in a step-by-step manner to ensure your reasoning and conclusion are correct.
-Avoid simply stating the correct answer at the outset."""
-
-# Grader LLM
-grader_llm = ChatOllama(
+grader_llm = LangchainLLMWrapper(ChatOllama(
     model=GRADER_MODEL,
     base_url=OLLAMA_BASE_URL,
     temperature=0.1,
-    # max anzahl an auszugebenden Tokens (soll nur 1 Token ausgeben)
-    max_tokens=64,
-    # Kontextgröße
+    max_tokens=512,
     n_ctx=2048,
-    # parallele Verarbeitung von x Tokens
-    n_batch=512,
-    n_threads=os.cpu_count(),
-    # logs
-    verbose=True
+))
+
+grader_embeddings = LangchainEmbeddingsWrapper(
+    HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME)
 )
 
-def correctness(inputs: dict, outputs: dict, reference_outputs: dict) -> bool:
-    """An evaluator for RAG answer accuracy"""
-    answers = f"""\
-QUESTION: {inputs['question']}
-GROUND TRUTH ANSWER: {reference_outputs['answer']}
-STUDENT ANSWER: {outputs['answer']}"""
-    # Run evaluator (Anpassung auf llamacpp)
-    prompt = (
-        f"{correctness_instructions}\n\n"
-        f"{answers}\n\n"
-        f"Antworte nur mit JSON: {{\"correct\": true}} oder {{\"correct\": false}}"
-    )
-    
-    grade = grader_llm.invoke(prompt)
-    
-    try:
-        raw = (
-            grade.content
-            .strip()
-            .removeprefix("```json")
-            .removeprefix("```")
-            .removesuffix("```")
-            .strip()
-        )
-        result = json.loads(raw)
-        return bool(result["correct"])
-    except (json.JSONDecodeError, KeyError, TypeError) as e:
-        logger.warning(
-            f"Grader-Output konnte nicht geparst werden: {grade.content!r} — Fehler: {e}"
-            )
-        return False
+def get_token_usage_for_ollama(response) -> TokenUsage:
+    input_tokens = 0
+    output_tokens = 0
 
-@traceable
+    for gen_list in response.generations:
+        for gen in gen_list:
+            info = getattr(gen, "generation_info", {}) or {}
+            input_tokens += info.get("prompt_eval_count", 0)
+            output_tokens += info.get("eval_count", 0)
+
+    return TokenUsage(input_tokens=input_tokens, output_tokens=output_tokens)
+
+def run_pipeline(question: str) -> dict:
+    """RAG-Pipeline ausführen und Antwort + Chunks zurückgeben."""
+    candidates = hybrid_search(question)
+    reranked = rerank_candidates(question, candidates, cross_encoder, TOP_K)
+    top_docs = [doc for score, doc in reranked]
+
+    answer = qa_chain.invoke({
+        "context": top_docs,
+        "input": question
+    })
+
+    return {
+        "answer": answer,
+        "contexts": [doc.page_content for doc in top_docs],
+    }
+
+
+def build_dataset() -> EvaluationDataset:
+    """Beispielfragen durch die Pipeline laufen lassen und Dataset bauen."""
+    samples = []
+
+    for example in examples:
+        question = example["inputs"]["question"]
+        ground_truth = example["outputs"]["answer"]
+
+        print(f"  → {question}")
+        result = run_pipeline(question)
+
+        samples.append(SingleTurnSample(
+            user_input=question,
+            response=result["answer"],
+            retrieved_contexts=result["contexts"],
+            reference=ground_truth,
+        ))
+
+    return EvaluationDataset(samples=samples)
+
+
 def evaluation():
-    print("Starte Evaluation")
-    evaluation_results = evaluate(
-            target,
-            data=dataset_name,
-            evaluators=[correctness],
-            experiment_prefix="rag-doc-relevance",
-            metadata={"version": "LCEL context, mistral-7b"},
-        )
-    return evaluation_results
+
+    dataset = build_dataset()
+
+    results = evaluate(
+        dataset=dataset,
+        metrics=[
+            Faithfulness(),        # Halluziniert das LLM?
+            AnswerRelevancy(),    # Beantwortet die Antwort die Frage?
+            ContextPrecision(),   # Sind die Chunks relevant? (braucht ground_truth)
+            ContextRecall(),      # Wurden alle relevanten Infos gefunden?
+            FactualCorrectness(),  # faktische Korrektheit der Antwort
+            NoiseSensitivity(),    # Robustheit gegen schlechte Chunks
+            ContextEntityRecall(), # Wurden wichtige Entitäten aus den Chunks in der Antwort verwendet?
+        ],
+        llm=grader_llm,
+        embeddings=grader_embeddings,
+        token_usage_parser=get_token_usage_for_ollama,
+    )
+
+    print("\n=== Ergebnisse ===")
+    print(results)
+    print(results.total_tokens())
+
+    # Als CSV speichern für spätere Analyse
+    df = results.to_pandas()
+    df.to_csv("data/evaluation/results.csv", index=False)
+    print("Ergebnisse gespeichert: data/evaluation/results.csv")
+
+    return results
+
 
 if __name__ == "__main__":
-    results = evaluation()
-    print("Evaluation finished")
-    
+    evaluation()
