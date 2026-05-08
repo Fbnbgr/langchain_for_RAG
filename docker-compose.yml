@@ -3,29 +3,26 @@ services:
     image: stain/jena-fuseki:5.0.0
     container_name: fuseki
     environment:
-      - ADMIN_PASSWORD=admin
+      - ADMIN_PASSWORD=${FUSEKI_PASSWORD}
       - JVM_ARGS=-Xmx4g
     ports:
       - "3030:3030"
     volumes:
-      - ./fuseki_data:/fuseki
-      - ./gnd_db:/gnd_data:ro
+      - ./fuseki_db:/fuseki
+      - ./data/gnd:/gnd_data:ro
       - ./fuseki-config:/fuseki/configuration
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3030/$/ping"]
-      interval: 30s
+      test: ["CMD-SHELL", "curl -s -o /dev/null -w '%{http_code}' http://localhost:3030/$/ping | grep -qE '(200|503)' && exit 0 || exit 1"]
+      interval: 15s
       timeout: 10s
-      retries: 5
-      start_period: 60s
+      retries: 10
+      start_period: 30s
   gnd-loader:
-    image: stain/jena-fuseki:5.0.0
+    image: stain/jena:5.0.0
     container_name: gnd-loader
-    depends_on:
-      fuseki:
-        condition: service_healthy
     volumes:
-      - ./gnd_data:/gnd_data:ro
-      - fuseki_db:/fuseki
+      - ./data/gnd:/gnd_data:ro   
+      - ./fuseki_db:/fuseki
       - ./scripts:/scripts
     entrypoint: ["/bin/sh", "/scripts/load_gnd.sh"]
     restart: "no"

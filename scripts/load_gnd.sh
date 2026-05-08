@@ -1,19 +1,18 @@
 #!/bin/sh
 set -e
 
-GND_FILE="/data/gnd/authorities-gnd.nt"
+GND_FILE="/gnd_data/authorities_lds_20260217.nt"
 TDB_DIR="/fuseki/databases/gnd"
 
-# Nur laden wenn TDB2-Verzeichnis noch leer ist (Idempotenz)
-if [ -d "$TDB_DIR" ] && [ "$(ls -A $TDB_DIR)" ]; then
-  echo "TDB2 database already exists, skipping load."
+# Prüfen ob wirklich Daten drin sind, nicht nur ob Ordner existiert
+if [ -f "$TDB_DIR/Data-0001.ivm" ]; then
+  echo "TDB2 already loaded, skipping."
   exit 0
 fi
 
-echo "Starting GND bulk load (~9M Triples, dauert 10-30 min)..."
+echo "Loading GND..."
 /jena/bin/tdb2.tdbloader \
   --loc "$TDB_DIR" \
-  --graph "https://d-nb.info/gnd/" \
   "$GND_FILE"
 
-echo "Load complete."
+echo "Done."
