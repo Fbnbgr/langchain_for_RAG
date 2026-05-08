@@ -3,3 +3,4 @@ data/pdfs
 data/evaluation/examples.py
 data/evaluation/__pycache__/
 src/__pycache__/
+fuseki_db/
