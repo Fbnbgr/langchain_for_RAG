@@ -16,3 +16,5 @@ requests
 flask
 ruff==0.5.0
 ragas
+SPARQLWrapper
+spacy

@@ -11,7 +11,7 @@ Alle Konfigurationen erfolgen über die `.env`-Datei.
 ### development
 git clone https://github.com/Fbnbgr/langchain_for_RAG
 
-.env anlegen (siehe evaluation)
+.env anlegen bzw. das template umbenennen (siehe evaluation)
 
 pdfs unter data/pdfs ablegen
 

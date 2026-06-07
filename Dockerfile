@@ -1,8 +1,7 @@
 FROM python:3.11-slim
-
 WORKDIR /app
 
-# Systemabhängigkeiten für PyPDF
+# Systemabhängigkeiten
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     cmake \
@@ -13,7 +12,10 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
 RUN pip install --no-cache-dir -r requirements.txt
 
-# HuggingFace Modell beim Build cachen (spart Zeit beim Start)
+# spaCy Modell beim Build laden (nicht zur Laufzeit)
+RUN python -m spacy download de_core_news_lg
+
+# HuggingFace Modell beim Build cachen
 RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')"
 
 # Anwendungscode

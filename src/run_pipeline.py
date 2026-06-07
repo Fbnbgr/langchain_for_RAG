@@ -4,7 +4,7 @@ import os
 import requests
 from dotenv import load_dotenv
 
-from evaluation import evaluation
+from indexer import run_indexer
 
 logger = logging.getLogger(__name__)
 load_dotenv()
@@ -27,6 +27,6 @@ def check_ollama() -> None:
 if __name__ == "__main__":
     check_ollama()
     logger.info("Prozess startet: Indexing")
-    # run_indexer()
+    run_indexer()
     logger.info("Prozess startet: Evaluation")
-    evaluation()
+    # evaluation()
