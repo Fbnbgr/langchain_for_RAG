@@ -28,3 +28,4 @@ REQUEST_TIMEOUT = 10
 USER_AGENT = "RAG-Crawler/1.0"
 DEBUG_OUTPUT_DIR = Path("data/debug")
 PDF_DOWNLOAD_DIR = Path("data/pdfs")
+FIRECRAWL_API_KEY = ...

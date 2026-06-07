@@ -40,6 +40,23 @@ def load_existing_hashes(vectordb: Chroma) -> set[str]:
     return existing
 
 
+def sanitize_metadata(metadata: dict | None) -> dict:
+    if not metadata:
+        return {}
+    sanitized: dict = {}
+    for key, value in metadata.items():
+        if value is None:
+            continue
+        if isinstance(value, (str, int, float, bool)):
+            sanitized[key] = value
+        else:
+            try:
+                sanitized[key] = str(value)
+            except Exception:
+                continue
+    return sanitized
+
+
 def add_documents(
         vectordb: Chroma,
         embeddings: HuggingFaceEmbeddings,
@@ -49,7 +66,7 @@ def add_documents(
     vectordb._collection.add(
         ids=[str(uuid.uuid4()) for _ in chunks],
         documents=[chunk.page_content for chunk in chunks],
-        metadatas=[chunk.metadata for chunk in chunks],
+        metadatas=[sanitize_metadata(chunk.metadata) for chunk in chunks],
         embeddings=embeddings.embed_documents([chunk.page_content for chunk in chunks])
     )
 
