@@ -1,12 +1,15 @@
 import os
+from pathlib import Path
+
 import chromadb
 
-CHROMA_DIR = os.getenv("CHROMA_DIR", "chroma_db")
+ROOT_DIR = Path(__file__).resolve().parents[1]
+CHROMA_DIR = os.getenv("CHROMA_DIR", str(ROOT_DIR / "chroma_db"))
 
 if __name__ == "__main__":
     client = chromadb.PersistentClient(path=CHROMA_DIR)
     
-    collection = client.get_collection("langchain")  # oder dein Collection-Name
+    collection = client.get_collection("langchain")
     data = collection.get(include=["documents", "metadatas"])
     
     ids = data.get("ids", [])

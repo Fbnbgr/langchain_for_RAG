@@ -1,6 +1,17 @@
+import logging
+import os
+
 from flask import Flask, render_template_string, request
 
-from retrieval import TOP_K, cross_encoder, hybrid_search, qa_chain, rerank_candidates
+from retrieval import TOP_K, cross_encoder, gnd_search, hybrid_search, qa_chain, rerank_candidates
+
+log_level = os.getenv("LOG_LEVEL", "INFO").upper()
+logging.basicConfig(
+    level=getattr(logging, log_level),
+    format="%(asctime)s %(levelname)s %(name)s – %(message)s",
+    handlers=[logging.StreamHandler()]
+)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
@@ -37,7 +48,9 @@ def index():
         # Verwende bestehende Logik aus retrieval.py
         candidates = hybrid_search(query)
         reranked = rerank_candidates(query, candidates, cross_encoder, TOP_K)
-        top_docs = [doc for score, doc in reranked]
+        gnd = gnd_search(query) or []  
+        top_docs = [doc for score, doc in reranked] + gnd
+        logger.debug(f"Top-Dokumente: {[doc.metadata.get('source_file') or doc.metadata.get('source', 'unbekannt') for doc in top_docs]}")
         
         # Antwort generieren
         answer = qa_chain.invoke({"context": top_docs, "input": query})

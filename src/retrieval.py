@@ -3,11 +3,6 @@ import os
 
 import spacy
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s %(levelname)s %(name)s – %(message)s",
-    handlers=[logging.StreamHandler()]
-)
 logger = logging.getLogger(__name__)
 
 # spaCy Modell einmalig laden
@@ -118,7 +113,7 @@ def query_gnd_person(name: str) -> list[Document]:
         results = sparql.query().convert()
         logger.debug(f"GND Rohantwort: {results}")
         bindings = results.get("results", {}).get("bindings", [])
-        logger.info(f"GND SPARQL: {len(bindings)} Treffer für '{name}'")
+        logger.info(f"GND SPARQL: {len(bindings)} Treffer für '{name_capitalized}'")
 
         docs = []
         fields = {
@@ -134,7 +129,7 @@ def query_gnd_person(name: str) -> list[Document]:
 
         for r in bindings:
             gnd_id = r.get("id", {}).get("value", "")
-            text = f"GND-Person: {name}\n"
+            text = f"GND-Person: {name_capitalized}\n"
             text += f"GND-ID: {gnd_id}\n"
             for key, label in fields.items():
                 if key in r:
@@ -142,14 +137,14 @@ def query_gnd_person(name: str) -> list[Document]:
 
             docs.append(Document(
                 page_content=text,
-                metadata={"source": "GND", "gnd_id": gnd_id, "entity": name}
+                metadata={"source": "GND", "gnd_id": gnd_id, "entity": name_capitalized}
             ))
-            logger.debug(f"GND Dokument (id={gnd_id}):\n{text}")
+            logger.info(f"GND Dokument (id={gnd_id}):\n{text}")
 
-        logger.info(f"GND: {len(docs)} Dokumente erstellt für '{name}'")
+        logger.info(f"GND: {len(docs)} Dokumente erstellt für '{name_capitalized}'")
         return docs
     except Exception:
-        logger.exception("GND SPARQL Fehler für '%s'", name, exc_info=True)
+        logger.exception("GND SPARQL Fehler für '%s'", name_capitalized, exc_info=True)
         return []
 
 
@@ -161,19 +156,27 @@ def query_gnd_general(name: str) -> list[Document]:
     sparql.setReturnFormat(JSON)
     sparql.setQuery(f"""
         PREFIX gndo: <https://d-nb.info/standards/elementset/gnd#>
-        SELECT ?id ?type ?label WHERE {{
-            ?id gndo:preferredName "{name_capitalized}"@de .
+        PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+        SELECT ?id ?type ?name ?biographicalOrHistoricalInformation ?dateOfEstablishment ?placeOfBusiness WHERE {{
+            ?id gndo:preferredNameForTheCorporateBody ?name .
+            FILTER(CONTAINS(STR(?name), "{name_capitalized}"))
             OPTIONAL {{ ?id a ?type }}
-            BIND("{name_capitalized}" AS ?label)
-        }} LIMIT 5
+            OPTIONAL {{ ?id gndo:preferredNameForThePlace ?name }}
+            OPTIONAL {{ ?id gndo:biographicalOrHistoricalInformation ?biographicalOrHistoricalInformation }}
+            OPTIONAL {{ ?id gndo:dateOfEstablishment ?dateOfEstablishment }}
+            OPTIONAL {{ ?id gndo:characteristicPlace ?characteristicPlace }}
+            OPTIONAL {{ ?id gndo:placeOfBusiness ?placeOfBusiness }}
+        }} LIMIT 10
     """)
+
     try:
         results = sparql.query().convert()
         docs = []
         for r in results["results"]["bindings"]:
             gnd_id = r.get("id", {}).get("value", "")
             ent_type = r.get("type", {}).get("value", "unbekannt").split("#")[-1]
-            text = f"GND-Eintrag: {name}\nTyp: {ent_type}\nGND-ID: {gnd_id}\n"
+            text = f"GND-Eintrag: {name_capitalized}\nTyp: {ent_type}\nGND-ID: {gnd_id}\n"
             docs.append(Document(
                 page_content=text,
                 metadata={"source": "GND", "gnd_id": gnd_id, "entity": name}
@@ -283,7 +286,6 @@ def hybrid_search(query, k=TOP_K):
 
     emb = retriever.invoke(query)
     bm25 = bm25_retriever.invoke(query)
-    # gnd = gnd_search(query)   
 
     emb_weight = float(os.getenv("EMB_WEIGHT", 0.7))
     bm25_weight = float(os.getenv("BM25_WEIGHT", 0.3))
@@ -298,15 +300,8 @@ def hybrid_search(query, k=TOP_K):
     for rank, doc in enumerate(bm25):
         scored[doc.page_content] = scored.get(doc.page_content, 0) + bm25_weight * (1 / (rank + 1))
 
-    # GND direkt hinzufügen (kein Ranking, immer mit festem Gewicht)
-    gnd_docs_map = {}
-    for rank, doc in enumerate(gnd_docs_map):
-        scored[doc.page_content] = scored.get(doc.page_content, 0) + GND_WEIGHT * (1 / (rank + 1))
-        gnd_docs_map[doc.page_content] = doc
-
     sorted_docs = sorted(scored.items(), key=lambda x: x[1], reverse=True)
 
     content_to_doc = {doc.page_content: doc for doc in bm25 + emb}
-    content_to_doc.update(gnd_docs_map) 
 
     return [content_to_doc[content] for content, score in sorted_docs[:k]]

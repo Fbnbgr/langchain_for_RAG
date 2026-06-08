@@ -4,10 +4,18 @@ import os
 import requests
 from dotenv import load_dotenv
 
+load_dotenv()
+
 from indexer import run_indexer
 
+log_level = os.getenv("LOG_LEVEL", "INFO").upper()
+logging.basicConfig(
+    level=getattr(logging, log_level),
+    format="%(asctime)s %(levelname)s %(name)s – %(message)s",
+    handlers=[logging.StreamHandler()]
+)
 logger = logging.getLogger(__name__)
-load_dotenv()
+
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://host.docker.internal:11434")
 
 def check_ollama() -> None:
